@@ -1,22 +1,19 @@
 package ar.com.tdm.mock.model.entities;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "LastSyncInfo")
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 
-public class Creator {
+public class LastSyncInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String resourceURI;
-    private String name;
-    private String role;
-
+    private LocalDateTime lastSyncDateTime; // Campo para almacenar la fecha y hora de la última sincronización
 }
