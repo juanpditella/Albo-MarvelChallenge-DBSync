@@ -1,12 +1,12 @@
 package ar.com.tdm.mock.model.entities.serviceA;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.Table;
+
 
 @Entity
 @Table(name = "CollaboratorHeroRelation")
@@ -14,7 +14,6 @@ import javax.persistence.Table;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CollaboratorHeroRelation {
-    @Id
-    private Long idSuperHero;
-    private Long idCreator;
+    @EmbeddedId
+    private CollaboratorHeroRelationId id;
 }

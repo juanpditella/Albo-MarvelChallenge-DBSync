@@ -2,7 +2,7 @@ package ar.com.tdm.mock.services;
 
 import ar.com.tdm.mock.model.entities.SuperHero;
 import ar.com.tdm.mock.model.entities.serviceA.Creator;
-import ar.com.tdm.mock.model.entities.serviceB.Comic;
+import ar.com.tdm.mock.model.entities.serviceB.Interaction;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +37,6 @@ public class ApiMarvelClient {
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             List<Creator> creatorSummaries = extractCreatorSummaries(response.getBody());
-            System.out.println(creatorSummaries.toString());
             return creatorSummaries;
         } catch (Exception e) {
             e.printStackTrace();
@@ -88,7 +87,7 @@ public class ApiMarvelClient {
             return superHeroId;
         } catch (Exception e) {
             e.printStackTrace();
-            return null; // Return null in case of error
+            return null;
         }
     }
 
@@ -125,41 +124,62 @@ public class ApiMarvelClient {
         }
     }
 
-    public List<Comic> getComicsForCharacter(Long characterId) {
-        RestTemplate restTemplate = new RestTemplate();
+    public List<Interaction> getInteractionsForSuperHero(SuperHero superHero) {
+        Long superHeroId = getSuperHeroIdByName(superHero.getName());
+        if (superHeroId == null) {
+            return new ArrayList<>();
+        }
 
+        RestTemplate restTemplate = new RestTemplate();
         long timestamp = System.currentTimeMillis();
         String hash = generateHash(privateKey, publicKey, timestamp);
 
-        String url = baseUrl + "/characters/" + characterId + "/comics" +
+        String url = baseUrl + "/characters/" + superHeroId + "/comics" +
                 "?ts=" + timestamp +
                 "&apikey=" + publicKey +
                 "&hash=" + hash;
 
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-            List<Comic> comics = extractComics(response.getBody());
-            return comics;
+            List<Interaction> interactions = extractInteractions(response.getBody(), superHero);
+            return interactions;
         } catch (Exception e) {
             e.printStackTrace();
-            return new ArrayList<>(); // Return an empty list in case of error
+            return new ArrayList<>();
         }
     }
 
-    private List<Comic> extractComics(String responseBody) {
-        List<Comic> comics = new ArrayList<>();
+    private List<Interaction> extractInteractions(String responseBody, SuperHero superHero) {
+        List<Interaction> interactions = new ArrayList<>();
 
         JSONObject responseObject = new JSONObject(responseBody);
         JSONArray resultsArray = responseObject.getJSONObject("data").getJSONArray("results");
 
-        for (int i = 0; i < resultsArray.length(); i++) {
-            JSONObject comicObject = resultsArray.getJSONObject(i);
-            Long comicId = comicObject.getLong("id");
-            String title = comicObject.getString("title");
-            Comic comic = new Comic(comicId, title);
-            comics.add(comic);
+        for (int comicIndex = 0; comicIndex < resultsArray.length(); comicIndex++) {
+            JSONObject comicObject = resultsArray.getJSONObject(comicIndex);
+            interactions.addAll(createInteractionsFromComic(comicObject, superHero));
         }
+        return interactions;
+    }
 
-        return comics;
+    private List<Interaction> createInteractionsFromComic(JSONObject comicObject, SuperHero superHero) {
+        List<Interaction> interactionsList = new ArrayList<>();
+
+        String comicTitle = comicObject.getString("title");
+
+        JSONArray charactersArray = comicObject.getJSONObject("characters").getJSONArray("items");
+        for (int charIndex = 0; charIndex < charactersArray.length(); charIndex++) {
+            JSONObject characterObject = charactersArray.getJSONObject(charIndex);
+            String characterName = characterObject.getString("name");
+            if (!characterName.equals(superHero.getName())) {
+                Interaction interaction = new Interaction();
+                interaction.setComicName(comicTitle); // Set the comic title
+                interaction.setInteractionHero(characterName); // Set the character name
+                interaction.setHero(superHero); // Set the interaction hero
+                interactionsList.add(interaction);
+            }
+        }
+        return interactionsList;
     }
 }
+

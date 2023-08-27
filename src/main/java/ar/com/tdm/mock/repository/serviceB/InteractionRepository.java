@@ -6,5 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface InteractionRepository extends JpaRepository<Interaction, Long> {
+    Interaction findByComicNameAndHero_NameAndInteractionHero(String comicName, String heroName, String interactionHero);
 }
 

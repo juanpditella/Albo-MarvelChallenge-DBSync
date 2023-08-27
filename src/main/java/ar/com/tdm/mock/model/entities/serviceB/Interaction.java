@@ -1,12 +1,14 @@
 package ar.com.tdm.mock.model.entities.serviceB;
 
 import ar.com.tdm.mock.model.entities.SuperHero;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
 @Entity
 @Table(name = "Interaction")
+@Data
 @NoArgsConstructor
 public class Interaction {
     @Id
@@ -15,14 +17,10 @@ public class Interaction {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "hero_id")
+    @JoinColumn(name = "hero_id") // Cambia esto según la columna correcta en tu base de datos
     private SuperHero hero;
 
-    @ManyToOne
-    @JoinColumn(name = "comic_id")
-    private Comic comic;
+    private String comicName;
 
-    @ManyToOne
-    @JoinColumn(name = "interaction_hero_id")
-    private SuperHero interactionHero;
+    private String interactionHero;
 }
