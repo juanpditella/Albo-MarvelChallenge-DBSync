@@ -29,13 +29,13 @@ public class ApiMarvelControllerImpl implements ApiMarvelController {
     @Scheduled(cron = "0 0 2 * * ?") // Ejecutar a las 2 AM todos los días
     public void updateDataScheduled() {
         updateData();
-        this.apiMarvelService.newSinchronization();
     }
 
     public void updateData() {
         for (String hero : heroesList) {
             updateDataCharacter(hero);
         }
+        this.apiMarvelService.newSynchronization();
     }
 
     private void updateDataCharacter(String character){

@@ -1,7 +1,6 @@
 package ar.com.tdm.mock.services;
 
 import ar.com.tdm.mock.model.entities.serviceA.CollaboratorHeroRelation;
-import ar.com.tdm.mock.model.entities.serviceA.CollaboratorHeroRelationId;
 import ar.com.tdm.mock.model.entities.serviceA.Creator;
 import ar.com.tdm.mock.model.entities.LastSyncInfo;
 import ar.com.tdm.mock.model.entities.SuperHero;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -44,23 +44,22 @@ public class ApiMarvelServiceImpl implements ApiMarvelService {
     @Override
     @Transactional
     public void updateCollaborators(String superHeroName) {
-        // Check if the SuperHero exists in the repository
         SuperHero superHero = superHeroRepository.findByName(superHeroName);
+
         if (superHero == null) {
-            // If the SuperHero doesn't exist, create and save it
             Long idSH = apiMarvelClient.getSuperHeroIdByName(superHeroName);
-            if (idSH!=null){
+            if (idSH != null) {
                 superHero = new SuperHero(idSH, superHeroName);
                 this.superHeroRepository.save(superHero);
             }
         }
 
         if (superHero != null) {
-
             List<Creator> collaborators = apiMarvelClient.getCollaboratorsForHero(superHero.getId());
 
             for (Creator collaborator : collaborators) {
-                Creator existingCollaborator = creatorRepository.findByResourceURIAndNameAndRole(collaborator.getResourceURI(), collaborator.getName(), collaborator.getRole());
+                Creator existingCollaborator = creatorRepository.findByResourceURIAndNameAndRole(
+                        collaborator.getResourceURI(), collaborator.getName(), collaborator.getRole());
 
                 if (existingCollaborator == null) {
                     collaborator = creatorRepository.save(collaborator);
@@ -68,7 +67,7 @@ public class ApiMarvelServiceImpl implements ApiMarvelService {
                     collaborator = existingCollaborator;
                 }
 
-                CollaboratorHeroRelation relation = new CollaboratorHeroRelation(new CollaboratorHeroRelationId(superHero.getId(),collaborator.getId()));
+                CollaboratorHeroRelation relation = new CollaboratorHeroRelation(superHero.getId(), collaborator.getId());
                 collaboratorHeroRepository.save(relation);
             }
         }
@@ -100,10 +99,15 @@ public class ApiMarvelServiceImpl implements ApiMarvelService {
         }
     }
 
-    public void newSinchronization(){
+    public void newSynchronization() {
         LastSyncInfo lastSyncInfo = new LastSyncInfo();
-        lastSyncInfo.setLastSyncDateTime(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        lastSyncInfo.setLastSyncDateTime(now);
         lastSyncInfoRepository.save(lastSyncInfo);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        String formattedDateTime = now.format(formatter);
+        System.out.println(formattedDateTime);  // O cualquier acción que desees con la fecha formateada
     }
 }
 
