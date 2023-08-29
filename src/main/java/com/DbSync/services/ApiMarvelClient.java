@@ -1,11 +1,14 @@
 package com.DbSync.services;
 
 
+import com.DbSync.exceptions.HeroNotFoundException;
 import com.DbSync.model.entities.SuperHero;
 import com.DbSync.model.entities.serviceA.Creator;
 import com.DbSync.model.entities.serviceB.Interaction;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -16,11 +19,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class ApiMarvelClient {
 
-    private final String publicKey = "77ca3d98da341900b49f16a1c22d0167";
-    private final String privateKey = "4848df92e1c9fc475401939e00b65a963266092a";
+    @Value("${marvel.api.publicKey}")
+    private String publicKey;
+
+    @Value("${marvel.api.privateKey}")
+    private String privateKey;
     private final String baseUrl = "https://gateway.marvel.com/v1/public";
 
 
@@ -70,7 +77,7 @@ public class ApiMarvelClient {
         return creatorSummaries;
     }
 
-    public Long getSuperHeroIdByName(String superHeroName) {
+    public Long getSuperHeroIdByName(String superHeroName) throws HeroNotFoundException {
         RestTemplate restTemplate = new RestTemplate();
 
         long timestamp = System.currentTimeMillis();
@@ -87,12 +94,11 @@ public class ApiMarvelClient {
             Long superHeroId = extractSuperHeroId(response.getBody());
             return superHeroId;
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new HeroNotFoundException("Los datos del heroe no son correctos.");
         }
     }
 
-    private Long extractSuperHeroId(String responseBody) {
+    private Long extractSuperHeroId(String responseBody) throws HeroNotFoundException {
         JSONObject responseObject = new JSONObject(responseBody);
         JSONArray resultsArray = responseObject.getJSONObject("data").getJSONArray("results");
 
@@ -100,8 +106,9 @@ public class ApiMarvelClient {
             JSONObject resultObject = resultsArray.getJSONObject(0);
             return resultObject.getLong("id");
         }
-
-        return null;
+        else{
+            throw new HeroNotFoundException("Los datos del heroe no son correctos.");
+        }
     }
 
     // Método para generar el hash necesario para la autenticación
@@ -126,8 +133,11 @@ public class ApiMarvelClient {
     }
 
     public List<Interaction> getInteractionsForSuperHero(SuperHero superHero) {
-        Long superHeroId = getSuperHeroIdByName(superHero.getName());
-        if (superHeroId == null) {
+        Long superHeroId = null;
+        try {
+            superHeroId = getSuperHeroIdByName(superHero.getName());
+        } catch (HeroNotFoundException e) {
+            log.error("El heroe "+superHero+" no se encuentra el la API de Marvel");
             return new ArrayList<>();
         }
 
